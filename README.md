@@ -1,15 +1,15 @@
 # Client Segmentation & Strategic Insights for Company XYZ
 Client segmentation and strategic insights using K-Means clustering for a wholesale distributor in Portugal.
 
-## 📌 Project Overview
+## Project Overview
 Company XYZ, a wholesale distributor based in Portugal, aims to optimize its inventory management and tailor its marketing strategies by understanding spending behavior across its 440 business clients. This project applies clustering techniques to identify distinct client segments and extract actionable insights for improving demand forecasting and client retention.
 
-## 🎯 Objectives
+## Objectives
 - Identify spending patterns across six product categories: Fresh, Milk, Grocery, Frozen, Detergents_Paper, and Delicatessen.
 - Segment clients into meaningful groups using K-Means clustering and silhouette analysis.
 - Provide strategic recommendations tailored to each segment’s behavior and needs.
 
-## 🛠️ Methodology
+##  Methodology
 1. **Data Preprocessing**
    - Handled missing values (none found).
    - Detected and removed outliers using IQR-based logic.
@@ -26,7 +26,7 @@ Company XYZ, a wholesale distributor based in Portugal, aims to optimize its inv
 4. **Segmentation Result**
    - Final segmentation includes **4 clusters**, integrating 3 main K-Means clusters and the outlier group.
 
-## 🔍 Cluster Profiles
+##  Cluster Profiles
 1. **Elite Spenders**
    - High-value clients with consistent large orders in Fresh, Milk, Frozen, and Grocery.
    - Found primarily among Horeca in Oporto and Retailers in other regions.
@@ -43,7 +43,7 @@ Company XYZ, a wholesale distributor based in Portugal, aims to optimize its inv
    - Low to mid-level spenders, often boutique or small-scale clients.
    - Price-sensitive and responsive to value bundles.
 
-## 💡 Strategic Recommendations
+##  Strategic Recommendations
 | Cluster            | Strategy Highlights |
 |--------------------|---------------------|
 | **Elite Spenders** | Premium bundles, loyalty programs, volume discounts, flexible delivery. |
@@ -51,4 +51,3 @@ Company XYZ, a wholesale distributor based in Portugal, aims to optimize its inv
 | **Essential Stockers** | Cross-sell Fresh & Milk with essentials, tiered pricing, fast delivery. |
 | **Value Seekers** | Smaller frequent bundles, pricing incentives, retention via smart offers. |
 
-## 📁 Repository Structure
