@@ -1,6 +1,13 @@
 # Client Segmentation & Strategic Insights for Company XYZ
 Client segmentation and strategic insights using K-Means clustering for a wholesale distributor in Portugal.
 
+## Collaborators: 
+Aurosikha Mohanty
+Aditya Govind
+Rita Wang
+Abhinav Maharana
+Dhairya Patadia 
+
 ## Project Overview
 Company XYZ, a wholesale distributor based in Portugal, aims to optimize its inventory management and tailor its marketing strategies by understanding spending behavior across its 440 business clients. This project applies clustering techniques to identify distinct client segments and extract actionable insights for improving demand forecasting and client retention.
 
