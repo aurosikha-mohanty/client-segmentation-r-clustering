@@ -1,0 +1,181 @@
+---
+title: "Technical Document"
+output: pdf_document
+date: "2024-10-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+# Loading Packages & Data
+```{r}
+library(dplyr)
+library(cluster)  # For silhouette calculation
+library(factoextra)  # For clustering viz
+# Load Data
+cust_df <- read.csv("C:\\Users\\auros\\OneDrive\\Documents\\Wholesale_customers.csv")
+head(cust_df)
+```
+# Data Preprocessing
+
+## Null Treatment
+```{r}
+#Checking total no. of nulls
+sum(is.na(cust_df))
+#Null treatment not required
+```
+
+## Identifying & Understanding Outliers
+```{r}
+boxplot(cust_df$Fresh,cust_df$Grocery,cust_df$Frozen,cust_df$Detergents_Paper,cust_df$Delicatessen,names = c("Fresh","Grocery","Frozen","Detegent","Deli"))
+
+# Function to identify outliers based on IQR
+identify_outliers <- function(column) {
+  Q1 <- quantile(column, 0.25)
+  Q3 <- quantile(column, 0.75)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 2 * IQR
+  upper_bound <- Q3 + 2 * IQR
+  return(column < lower_bound | column > upper_bound)
+}
+
+# Create a logical matrix indicating outliers
+outliers_matrix <- sapply(cust_df, identify_outliers)
+
+# Count the number of outliers in each row
+outlier_counts <- rowSums(outliers_matrix)
+print(('Removing rows where outliers exist in atleast :'))
+for (i in 1:7){
+  cleaned_df <- cust_df[(outlier_counts<i), ]
+  print(paste0(i," or more columns"))
+  print(nrow(cleaned_df))}
+```
+
+## Outlier Treatment:
+### After undergoing multiple iterations of clustering and analyzing the results, we decided on only excluding the rows having atleast 2 or more outliers 
+### The outlier data is separated to be treated as a cluster of it's own named as "Elite Spenders" 
+```{r}
+# Creating dataframe without outliers
+cleaned_df <- cust_df[outlier_counts < 2, ]
+#Creating a separate dataframe for the outliers
+cust_df_outlier <- setdiff(cust_df, cleaned_df)
+
+```
+
+```{r}
+cleaned_df %>% group_by(Channel,Region) %>% summarise(count_x=n(),fresh_x=mean(Fresh),
+                                               Milk_x=mean(Milk),
+                                               Frozen_x=mean(Frozen),
+                                               grocery_x=mean(Grocery),
+                                               Detergents_Paper_x=mean(Detergents_Paper),
+                                               Delicatessen_x=mean(Delicatessen)
+) %>% arrange(Channel)
+```
+
+## Data Normalization
+### Using scaled normalization instead of min-max normalization as scaling is a better method when we also want to deal with outliers in the data. It is also considered to be a prefered method of normalization for K-means clustering
+```{r}
+# Removed columns stored in separate variables
+Channel <- cleaned_df$Channel  # Save the first removed column
+Region <- cleaned_df$Region  # Save the second removed column
+
+cleaned_df <- cleaned_df[3:8]
+
+# Normalize the data
+cleaned_df_scaled <- scale(cleaned_df)
+head(cleaned_df_scaled)
+```
+# Performing Clustering:  
+## Elbow plot to identify optimum k-value for K-means Cluster
+```{r}
+SSE_curve <- c()
+for (n in 1:10) {
+  kcluster = kmeans(cleaned_df_scaled, n)
+  sse = kcluster$tot.withinss
+  SSE_curve[n] = sse}
+# plot SSE against number of clusters
+plot(1:10, SSE_curve, type = "b")
+
+```
+
+### Tried multiple iterations for elbow plot for all cases of outlier treatment i.e. For our final selection of data ( i.e. when outliers existing in atleast 2 or more columns are excluded), k=2 and k=3 was shortlisted for further analysis 
+
+# Building K-MEANS Cluster : FOR K=2 (challenger model)
+```{r}
+kmeans_result <- kmeans(cleaned_df_scaled, centers = 2)
+# Add cluster assignment to the cleaned dataframe
+cleaned_df_k2 = cleaned_df
+cleaned_df_k2$Cluster <- kmeans_result$cluster
+cleaned_df_k2 <- cbind(cleaned_df_k2, Channel = Channel, Region = Region)
+## Visualizing clustering results using fviz_cluster
+fviz_cluster(kmeans_result, geom = "point", data = cleaned_df_scaled[,]) + ggtitle("k = 2")
+```
+
+## Understanding silhouette coefficient for K=2: 
+### It evaluates how well data points are clustered by comparing the intra-cluster cohesion with inter similarity
+### Reason behind finalizing K=2: It not only gives us good average silhouette coefficient but also showcases decent scores across each cluster.
+
+```{r}
+# Calculate silhouette coefficient
+distance_matrix = dist(cleaned_df_scaled, method = "euclidean")
+sc = silhouette(kmeans_result$cluster, dist = distance_matrix)
+summary(sc)
+average_silhouette <- mean(sc[, 3])
+# Print the average silhouette coefficient
+print(paste("Average Silhouette Coefficient:", average_silhouette))
+fviz_silhouette(sc)
+
+```
+
+## Building K-MEANS Cluster : FOR K=3 (Champion model)
+
+```{r}
+kmeans_result <- kmeans(cleaned_df_scaled, centers = 3)
+# Add cluster assignment to the cleaned dataframe
+cleaned_df$Cluster <- kmeans_result$cluster
+cleaned_df <- cbind(cleaned_df, Channel = Channel, Region = Region)
+## Visualizing clustering results using fviz_cluster
+fviz_cluster(kmeans_result, geom = "point", data = cleaned_df_scaled[,]) + ggtitle("k = 3")
+
+```
+
+## Understanding silhouette coefficient for K=3. 
+### It evaluates how well data points are clustered by comparing the intra-cluster cohesion with inter similarity
+### Reason behind finalizing K=3: It not only gives us good average silhouette coefficient but also showcases decent scores across 2 clusters and a positive score for the 3rd clusters which reduces any chance of misclassification
+
+```{r}
+# Calculate silhouette coefficient
+distance_matrix = dist(cleaned_df_scaled, method = "euclidean")
+sc = silhouette(kmeans_result$cluster, dist = distance_matrix)
+summary(sc)
+average_silhouette <- mean(sc[, 3])
+# Print the average silhouette coefficient
+print(paste("Average Silhouette Coefficient:", average_silhouette))
+fviz_silhouette(sc)
+
+```
+
+## Building Hierarchical Cluster for K=3 & K=2
+```{r}
+# Hierarchical Clustering
+hierarchical = hclust(distance_matrix, method = "ward.D")
+plot(hierarchical)
+rect.hclust(hierarchical, k = 3)
+rect.hclust(hierarchical, k = 2)
+
+```
+
+### The dendogram also showcases a possible cluster of either K=3 or K=2 which supports our decision of considering k=3/4 from Kmeans clustering
+## Hence our next step would be to analyze the clusters from both K=3 and K=2 kmeans model and gain insights based on customers spending habits across each clusters and their relevant channel/region subgroups
+
+## EXPORTING RESULTS 
+```{r}
+#Printing output for K=3 to excel for further analysis
+#write.xlsx(cleaned_df, 'C:\\Users\\auros\\OneDrive\\Documents\\Outliers_3k.xlsx')
+#Printing output for K=2 to excel for further analysis
+#write.xlsx(cleaned_df_k2, 'C:\\Users\\auros\\OneDrive\\Documents\\Outliers_2k.xlsx')
+
+```
